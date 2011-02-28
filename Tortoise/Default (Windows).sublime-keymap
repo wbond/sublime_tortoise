@@ -1,0 +1,12 @@
+[
+	{ "keys": ["ctrl+alt+v,ctrl+alt+e"], "command": "tortoise_explore" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+c"], "command": "tortoise_commit" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+s"], "command": "tortoise_status" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+u"], "command": "tortoise_sync" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+l"], "command": "tortoise_log" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+f"], "command": "tortoise_diff_file" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+g"], "command": "tortoise_log_file" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+x"], "command": "tortoise_explore_file" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+a"], "command": "tortoise_add_file" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+r"], "command": "tortoise_remove_file" }
+]
