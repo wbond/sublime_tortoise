@@ -10,18 +10,18 @@ Simply copy the "Tortoise" folder to the folder that is opened when clicking the
 
 Simply edit a file inside of an SVN, Git or Mercurial working copy, and the following key commands will be available:
 
-  - The following commands are run on the root of the working copy:
-    - ctrl+alt+v, ctrl+alt+e - launch explorer to working copy
-    - ctrl+alt+v, ctrl+alt+l - working copy log
-    - ctrl+alt+v, ctrl+alt+s - working copy status
-    - ctrl+alt+v, ctrl+alt+c - working copy commit
-    - ctrl+alt+v, ctrl+alt+u - working copy update/sync
-  - The following commands are run on the current file:
-    - ctrl+alt+v, ctrl+alt+x - launch explorer to file
-    - ctrl+alt+v, ctrl+alt+f - diff file
-    - ctrl+alt+v, ctrl+alt+a - add file
-    - ctrl+alt+v, ctrl+alt+r - remove file
-    - ctrl+alt+v, ctrl+alt+g - log of file
+* The following commands are run on the root of the working copy:
+** ctrl+alt+v, ctrl+alt+e - launch explorer to working copy
+** ctrl+alt+v, ctrl+alt+l - working copy log
+** ctrl+alt+v, ctrl+alt+s - working copy status
+** ctrl+alt+v, ctrl+alt+c - working copy commit
+** ctrl+alt+v, ctrl+alt+u - working copy update/sync
+* The following commands are run on the current file:
+** ctrl+alt+v, ctrl+alt+x - launch explorer to file
+** ctrl+alt+v, ctrl+alt+f - diff file
+** ctrl+alt+v, ctrl+alt+a - add file
+** ctrl+alt+v, ctrl+alt+r - remove file
+** ctrl+alt+v, ctrl+alt+g - log of file
 
 == Configuration
 
