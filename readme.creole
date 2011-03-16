@@ -31,7 +31,9 @@ Each shortcut will automatically open the appropriate Tortoise* program to work 
 
 == License
 
-Sublime Tortoise is licensed under the MIT license:
+All of Sublime Tortoise is licensed under the MIT license, except for the
+files located in the svn subfolder, which are licensed according to the
+LICENSE file therein.
 
   Copyright (c) 2011 Will Bond <will@wbond.net>
 

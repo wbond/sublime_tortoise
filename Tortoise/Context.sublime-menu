@@ -1,0 +1,9 @@
+[
+    { "caption": "-" },
+    { "command": "tortoise_log_file", "caption": "Tortoise Log…" },
+    { "command": "tortoise_diff_file", "caption": "Tortoise Diff…" },
+    { "command": "tortoise_add_file", "caption": "Tortoise Add…" },
+    { "command": "tortoise_revert_file", "caption": "Tortoise Revert…" },
+    { "command": "tortoise_remove_file", "caption": "Tortoise Delete…" },
+    { "caption": "-", "id": "end" }
+]
