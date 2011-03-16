@@ -11,6 +11,8 @@ class TortoiseCommand(sublime_plugin.TextCommand):
 		settings = sublime.load_settings('Tortoise.sublime-settings')
 
 		try:
+			if file == None:
+				raise NotFoundError('Unable to run commands on an unsaved file')
 			vcs = None
 
 			try:
@@ -37,62 +39,79 @@ class TortoiseCommand(sublime_plugin.TextCommand):
 			sublime.error_message('Tortoise: ' + str(exception))
 			raise NotFoundError(str(exception))
 
+def silenced(fn):
+	def silencer(self, edit):
+		try:
+			fn(self, edit)
+		except (NotFoundError):
+			pass
+	return silencer
 
 class TortoiseExploreCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).explore()
 
 
 class TortoiseCommitCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).commit()
 
 
 class TortoiseStatusCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).status()
 
 
 class TortoiseSyncCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).sync()
 
 
 class TortoiseLogCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).log()
 
 
 class TortoiseLogFileCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).log(file)
 
 
 class TortoiseDiffFileCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).diff(file)
 
 
 class TortoiseAddFileCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).add(file)
 
 
 class TortoiseRemoveFileCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).remove(file)
 
 
 class TortoiseExploreFileCommand(TortoiseCommand):
+	@silenced
 	def run(self, edit):
 		file = self.view.file_name()
 		self.get_vcs(file).explore(file)
