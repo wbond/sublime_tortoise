@@ -8,5 +8,6 @@
 	{ "keys": ["ctrl+alt+v,ctrl+alt+g"], "command": "tortoise_log_file" },
 	{ "keys": ["ctrl+alt+v,ctrl+alt+x"], "command": "tortoise_explore_file" },
 	{ "keys": ["ctrl+alt+v,ctrl+alt+a"], "command": "tortoise_add_file" },
-	{ "keys": ["ctrl+alt+v,ctrl+alt+r"], "command": "tortoise_remove_file" }
+	{ "keys": ["ctrl+alt+v,ctrl+alt+r"], "command": "tortoise_remove_file" },
+	{ "keys": ["ctrl+alt+v,ctrl+alt+t"], "command": "tortoise_revert_file" }
 ]

@@ -7,6 +7,6 @@
 	{ "caption": "Tortoise Diff…", "command": "tortoise_diff_path", "args": {"paths": []} },
 	{ "caption": "Tortoise Add…", "command": "tortoise_add_path", "args": {"paths": []} },
 	{ "caption": "Tortoise Revert…", "command": "tortoise_revert_path", "args": {"paths": []} },
-	{ "caption": "Tortoise Delete…", "command": "tortoise_remove_path", "args": {"paths": []} },
+	{ "caption": "Tortoise Remove…", "command": "tortoise_remove_path", "args": {"paths": []} },
 	{ "caption": "-", "id": "end" }
 ]

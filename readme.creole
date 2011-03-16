@@ -1,6 +1,6 @@
 = Sublime Tortoise
 
-This Sublime Text 2 (http://www.sublimetext.com/2) plugin provides keyboard shortcuts to TortoiseSVN, TortoiseGit and TortoiseHg.
+This Sublime Text 2 (http://www.sublimetext.com/2) plugin provides keyboard shortcuts and menu entries for TortoiseSVN, TortoiseGit and TortoiseHg.
 
 == Installation
 
@@ -8,7 +8,9 @@ Simply copy the "Tortoise" folder to the folder that is opened when clicking the
 
 == Usage
 
-Simply edit a file inside of an SVN, Git or Mercurial working copy, and the following key commands will be available:
+Simply edit a file inside of an SVN, Git or Mercurial working copy, and the editor right-click menu will contain commands that can be performed on the current file. In addition, the sidebar right-click menu will contain commands that can be performed on the selected file or folder.
+
+In addition to the menu item, the following key commands will be available when editing a file:
 
 * The following commands are run on the root of the working copy:
 ** ctrl+alt+v, ctrl+alt+e - launch explorer to working copy
@@ -21,6 +23,7 @@ Simply edit a file inside of an SVN, Git or Mercurial working copy, and the foll
 ** ctrl+alt+v, ctrl+alt+f - diff file
 ** ctrl+alt+v, ctrl+alt+a - add file
 ** ctrl+alt+v, ctrl+alt+r - remove file
+** ctrl+alt+v, ctrl+alt+t - revert file
 ** ctrl+alt+v, ctrl+alt+g - log of file
 
 == Configuration
