@@ -471,8 +471,13 @@ class TortoiseHg(Tortoise):
 		if binary_path != None:
 			self.binary_path = binary_path
 		else:
-			self.set_binary_path('TortoiseHg\\hgtk.exe',
-				'hgtk.exe', 'hg_hgtk_path')
+			try:
+				self.set_binary_path('TortoiseHg\\hgtk.exe',
+					'hgtk.exe', 'hg_hgtk_path')
+			except (NotFoundError):
+				self.set_binary_path('TortoiseHg\\thg.exe',
+					'thg.exe (for TortoiseHg v2.x) or hgtk.exe (for TortoiseHg v1.x)',
+					'hg_hgtk_path')
 	
 	def status(self, path=None):
 		if path == None:
