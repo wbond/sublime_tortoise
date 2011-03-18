@@ -416,7 +416,7 @@ class TortoiseSVN(TortoiseProc):
 	def __init__(self, binary_path, file):
 		self.find_root('.svn', file)
 		if binary_path != None:
-			self.binary_path = binary_path
+			self.path = binary_path
 		else:
 			self.set_binary_path('TortoiseSVN\\bin\\TortoiseProc.exe',
 				'TortoiseProc.exe', 'svn_tortoiseproc_path')
@@ -441,7 +441,7 @@ class TortoiseGit(TortoiseProc):
 	def __init__(self, binary_path, file):
 		self.find_root('.git', file)
 		if binary_path != None:
-			self.binary_path = binary_path
+			self.path = binary_path
 		else:
 			self.set_binary_path('TortoiseGit\\bin\\TortoiseProc.exe',
 				'TortoiseProc.exe', 'git_tortoiseproc_path')
@@ -469,7 +469,7 @@ class TortoiseHg(Tortoise):
 	def __init__(self, binary_path, file):
 		self.find_root('.hg', file)
 		if binary_path != None:
-			self.binary_path = binary_path
+			self.path = binary_path
 		else:
 			try:
 				self.set_binary_path('TortoiseHg\\hgtk.exe',
