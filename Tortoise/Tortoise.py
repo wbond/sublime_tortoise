@@ -427,7 +427,7 @@ class TortoiseSVN(TortoiseProc):
 
 	def get_status(self, path):
 		global file_status_cache
-		if path in file_status_cache and file_status_cache[path]['time'] > get_timestamp() - 2:
+		if path in file_status_cache and file_status_cache[path]['time'] > get_timestamp() - 10:
 			return file_status_cache[path]['status']
 		
 		svn = SVN()
@@ -452,7 +452,7 @@ class TortoiseGit(TortoiseProc):
 
 	def get_status(self, path):
 		global file_status_cache
-		if path in file_status_cache and file_status_cache[path]['time'] > get_timestamp() - 2:
+		if path in file_status_cache and file_status_cache[path]['time'] > get_timestamp() - 10:
 			return file_status_cache[path]['status']
 		
 		git = Git(self.path, self.root_dir)
@@ -517,7 +517,7 @@ class TortoiseHg(Tortoise):
 
 	def get_status(self, path):
 		global file_status_cache
-		if path in file_status_cache and file_status_cache[path]['time'] > get_timestamp() - 2:
+		if path in file_status_cache and file_status_cache[path]['time'] > get_timestamp() - 10:
 			return file_status_cache[path]['status']
 		
 		hg = Hg(self.path)
