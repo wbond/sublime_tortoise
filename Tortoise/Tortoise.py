@@ -560,7 +560,7 @@ class SVN():
 		for f in os.listdir(dirname):
 			entry = os.path.join(dirname, f)
 			if os.path.isdir(entry):
-				if os.path.exists(os.path.join(entry, 'SFTP.py')):
+				if os.path.exists(os.path.join(entry, 'Tortoise.py')):
 					cur_dir = entry
 		
 		svn_path = cur_dir + slash + 'svn' + slash + 'svn.exe'
