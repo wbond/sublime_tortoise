@@ -4,7 +4,7 @@ This Sublime Text 2 (http://www.sublimetext.com/2) plugin provides keyboard shor
 
 == Installation
 
-Simply copy the "Tortoise" folder to the folder that is opened when clicking the "Preferences > Browse Packages..." menu entry.
+Simply clone the repository into a new "Tortoise" directory in the Sublime Text 2 Packages directory. This can be located via the "Preferences > Browse Packages..." menu entry.
 
 == Usage
 
