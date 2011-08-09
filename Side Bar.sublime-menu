@@ -1,12 +1,12 @@
 [
 	{ "caption": "-" },
-	{ "caption": "Tortoise Status…", "command": "tortoise_status_path", "args": {"dirs": []} },
-	{ "caption": "Tortoise Log…", "command": "tortoise_log_path", "args": {"paths": []} },
-	{ "caption": "Tortoise Sync…", "command": "tortoise_sync_path", "args": {"dirs": []} },
-	{ "caption": "Tortoise Commit…", "command": "tortoise_commit_path", "args": {"dirs": []} },
-	{ "caption": "Tortoise Diff…", "command": "tortoise_diff_path", "args": {"paths": []} },
-	{ "caption": "Tortoise Add…", "command": "tortoise_add_path", "args": {"paths": []} },
-	{ "caption": "Tortoise Revert…", "command": "tortoise_revert_path", "args": {"paths": []} },
-	{ "caption": "Tortoise Remove…", "command": "tortoise_remove_path", "args": {"paths": []} },
+	{ "caption": "Tortoise Status…", "command": "tortoise_status", "args": {"paths": []} },
+	{ "caption": "Tortoise Log…", "command": "tortoise_log", "args": {"paths": []} },
+	{ "caption": "Tortoise Sync…", "command": "tortoise_sync", "args": {"paths": []} },
+	{ "caption": "Tortoise Commit…", "command": "tortoise_commit", "args": {"paths": []} },
+	{ "caption": "Tortoise Diff…", "command": "tortoise_diff", "args": {"paths": []} },
+	{ "caption": "Tortoise Add…", "command": "tortoise_add", "args": {"paths": []} },
+	{ "caption": "Tortoise Revert…", "command": "tortoise_revert", "args": {"paths": []} },
+	{ "caption": "Tortoise Remove…", "command": "tortoise_remove", "args": {"paths": []} },
 	{ "caption": "-", "id": "end" }
 ]

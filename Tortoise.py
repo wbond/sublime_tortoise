@@ -27,33 +27,39 @@ def intersect(a, b):
     return bool(set(a) & set(b))
 
 
-def get_vcs(file):
-    settings = sublime.load_settings('Tortoise.sublime-settings')
+class TortoiseCommand():
+    def get_path(self, paths):
+        if paths == True:
+            return self.window.active_view().file_name()
+        return paths[0] if paths else self.window.active_view().file_name()
 
-    if file == None:
-        raise NotFoundError('Unable to run commands on an unsaved file')
-    vcs = None
+    def get_vcs(self, path):
+        settings = sublime.load_settings('Tortoise.sublime-settings')
 
-    try:
-        vcs = TortoiseSVN(settings.get('svn_tortoiseproc_path', None), file)
-    except (RepositoryNotFoundError) as (exception):
-        pass
+        if path == None:
+            raise NotFoundError('Unable to run commands on an unsaved file')
+        vcs = None
 
-    try:
-        vcs = TortoiseGit(settings.get('git_tortoiseproc_path', None), file)
-    except (RepositoryNotFoundError) as (exception):
-        pass
+        try:
+            vcs = TortoiseSVN(settings.get('svn_tortoiseproc_path'), path)
+        except (RepositoryNotFoundError) as (exception):
+            pass
 
-    try:
-        vcs = TortoiseHg(settings.get('hg_hgtk_path', None), file)
-    except (RepositoryNotFoundError) as (exception):
-        pass
+        try:
+            vcs = TortoiseGit(settings.get('git_tortoiseproc_path'), path)
+        except (RepositoryNotFoundError) as (exception):
+            pass
 
-    if vcs == None:
-        raise NotFoundError('The current file does not appear to be in an ' +
-            'SVN, Git or Mercurial working copy')
+        try:
+            vcs = TortoiseHg(settings.get('hg_hgtk_path'), path)
+        except (RepositoryNotFoundError) as (exception):
+            pass
 
-    return vcs
+        if vcs == None:
+            raise NotFoundError('The current file does not appear to be in an ' +
+                'SVN, Git or Mercurial working copy')
+
+        return vcs
 
 
 def handles_not_found(fn):
@@ -73,291 +79,170 @@ def invisible_when_not_found(fn):
                 return res
             return True
         except (NotFoundError) as (exception):
+            print 'Exception: ' + str(exception)
             return False
     return handler
 
 
-class TortoiseExploreCommand(sublime_plugin.TextCommand):
+class TortoiseExploreCommand(sublime_plugin.WindowCommand, TortoiseCommand):
     @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).explore()
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).explore(path if paths else None)
 
 
-class TortoiseCommitCommand(sublime_plugin.TextCommand):
+class TortoiseCommitCommand(sublime_plugin.WindowCommand, TortoiseCommand):
     @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).commit()
-
-
-class TortoiseCommitPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, dirs):
-        path = dirs[0]
-        get_vcs(path).commit(path=path)
-
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).commit(path if os.path.isdir(path) else None)
+    
     @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        dirs = kwargs['dirs']
-        return len(dirs) > 0 and get_vcs(dirs[0]).get_status(dirs[0]) in \
-            ['A','', 'M', 'R', 'C', 'U']
-
-
-class TortoiseStatusCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).status()
-
-
-class TortoiseStatusPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, dirs):
-        path = dirs[0]
-        get_vcs(path).status(path=path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        dirs = kwargs['dirs'] if kwargs.has_key('dirs') else []
-        return len(dirs) > 0 and get_vcs(dirs[0]).get_status(dirs[0]) in \
-            ['A', '', 'M', 'R', 'C', 'U']
-
-
-class TortoiseSyncCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).sync()
-
-
-class TortoiseSyncPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, dirs):
-        path = dirs[0]
-        get_vcs(path).sync(path=path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        dirs = kwargs['dirs']
-        return len(dirs) > 0 and get_vcs(dirs[0]).get_status(dirs[0]) in \
-            ['A', '', 'M', 'R', 'C', 'U']
-
-
-class TortoiseLogCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).log()
-
-
-class TortoiseLogPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, paths):
-        path = paths[0]
-        get_vcs(path).log(path=path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        paths = kwargs['paths']
-        return get_vcs(paths[0]).get_status(paths[0]) in \
-            ['A', '', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self, **kwargs):
-        paths = kwargs['paths'] if kwargs.has_key('paths') else []
-        return len(paths) > 0 and get_vcs(paths[0]).get_status(paths[0]) in \
-            ['', 'M', 'R', 'C', 'U']
-
-
-class TortoiseLogFileCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).log(file)
-
-    @invisible_when_not_found
-    def is_visible(self):
-        file = self.view.file_name()
-        vcs = get_vcs(file)
-        return vcs.get_status(file) in ['A', '', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self):
-        file = self.view.file_name()
-        vcs = get_vcs(file)
-        return vcs.get_status(file) in ['', 'M', 'R', 'C', 'U']
-
-
-class TortoiseDiffFileCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).diff(file)
-
-    @invisible_when_not_found
-    def is_visible(self):
-        file = self.view.file_name()
-        return get_vcs(file).get_status(file) in ['A', '', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self):
-        file = self.view.file_name()
-        vcs = get_vcs(file)
-        if isinstance(vcs, TortoiseHg):
-            return vcs.get_status(file) in ['M']
-        else:
-            return vcs.get_status(file) in ['A', 'M', 'R', 'C', 'U']
-
-
-class TortoiseDiffPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, paths):
-        path = paths[0]
-        get_vcs(path).diff(path=path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        paths = kwargs['paths']
-        return len(paths) > 0 and get_vcs(paths[0]).get_status(paths[0]) in \
-            ['A', '', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self, **kwargs):
-        paths = kwargs['paths']
-        if len(paths) < 1:
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        if not path:
             return False
-        file = paths[0]
-        if os.path.isdir(paths[0]):
+        self.get_vcs(path)
+        return os.path.isdir(path)
+
+
+class TortoiseStatusCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).status(path if os.path.isdir(path) else None)
+    
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        if not path:
+            return False
+        self.get_vcs(path)
+        return os.path.isdir(path)   
+
+
+class TortoiseSyncCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).sync(path if os.path.isdir(path) else None)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        if not path:
+            return False
+        self.get_vcs(path)
+        return os.path.isdir(path)
+
+
+class TortoiseLogCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).log(path if paths else None)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
             return True
-        vcs = get_vcs(file)
-        if isinstance(vcs, TortoiseHg):
-            return vcs.get_status(file) in ['M']
-        else:
-            return vcs.get_status(file) in ['A', 'M', 'R', 'C', 'U']
-
-
-class TortoiseAddFileCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).add(file)
-
-    @invisible_when_not_found
-    def is_visible(self):
-        file = self.view.file_name()
-        return get_vcs(file).get_status(file) in ['D', '?']
-
-
-class TortoiseAddPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, paths):
-        path = paths[0]
-        get_vcs(path).add(path=path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        paths = kwargs['paths']
-        return get_vcs(paths[0]).get_status(paths[0]) in ['D', '?']
-
-
-class TortoiseRemoveFileCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).remove(file)
-
-    @invisible_when_not_found
-    def is_visible(self):
-        file = self.view.file_name()
-        return get_vcs(file).get_status(file) in ['A', '', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self):
-        file = self.view.file_name()
-        return get_vcs(file).get_status(file) in ['']
-
-
-class TortoiseRemovePathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, paths):
-        path = paths[0]
-        get_vcs(path).remove(path=path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        paths = kwargs['paths']
-        return get_vcs(paths[0]).get_status(paths[0]) in \
-            ['', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self, **kwargs):
-        paths = kwargs['paths']
-        return get_vcs(paths[0]).get_status(paths[0]) in ['']
-
-
-class TortoiseRevertFileCommand(sublime_plugin.TextCommand):
-    @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        vcs = get_vcs(file)
-        vcs.revert(file)
-
-    @invisible_when_not_found
-    def is_visible(self):
-        file = self.view.file_name()
-        return get_vcs(file).get_status(file) in ['A', '', 'M', 'R', 'C', 'U']
-
-    @invisible_when_not_found
-    def is_enabled(self):
-        file = self.view.file_name()
-        return get_vcs(file).get_status(file) in ['A', 'M', 'R', 'C', 'U']
-
-
-class TortoiseRevertPathCommand(sublime_plugin.WindowCommand):
-    @handles_not_found
-    def run(self, paths):
-        path = paths[0]
-        get_vcs(path).revert(path)
-
-    @invisible_when_not_found
-    def is_visible(self, **kwargs):
-        paths = kwargs['paths']
-        return get_vcs(paths[0]).get_status(paths[0]) in \
+        return path and self.get_vcs(path).get_status(path) in \
             ['A', '', 'M', 'R', 'C', 'U']
 
     @invisible_when_not_found
-    def is_enabled(self, **kwargs):
-        paths = kwargs['paths']
-        return os.path.isdir(paths[0]) or \
-            get_vcs(paths[0]).get_status(paths[0]) in ['A', 'M', 'R', 'C', 'U']
+    def is_enabled(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return True
+        return path and self.get_vcs(path).get_status(path) in \
+            ['', 'M', 'R', 'C', 'U']
 
 
-class TortoiseExploreFileCommand(sublime_plugin.TextCommand):
+class TortoiseDiffCommand(sublime_plugin.WindowCommand, TortoiseCommand):
     @handles_not_found
-    def run(self, edit):
-        file = self.view.file_name()
-        get_vcs(file).explore(file)
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).diff(path if paths else None)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return True
+        return self.get_vcs(path).get_status(path) in \
+            ['A', '', 'M', 'R', 'C', 'U']
+
+    @invisible_when_not_found
+    def is_enabled(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return True
+        vcs = self.get_vcs(path)
+        if isinstance(vcs, TortoiseHg):
+            return vcs.get_status(path) in ['M']
+        else:
+            return vcs.get_status(path) in ['A', 'M', 'R', 'C', 'U']
+
+
+class TortoiseAddCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).add(path)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        return self.get_vcs(path).get_status(path) in ['D', '?']
+
+
+class TortoiseRemoveCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).remove(path)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        return self.get_vcs(path).get_status(path) in \
+            ['A', '', 'M', 'R', 'C', 'U']
+
+    @invisible_when_not_found
+    def is_enabled(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return True
+        return self.get_vcs(path).get_status(path) in ['']
+
+
+class TortoiseRevertCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).revert(path)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        path = self.get_path(paths)
+        return self.get_vcs(path).get_status(path) in \
+            ['A', '', 'M', 'R', 'C', 'U']
+
+    @invisible_when_not_found
+    def is_enabled(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return True
+        return self.get_vcs(path).get_status(path) in \
+            ['A', 'M', 'R', 'C', 'U']
 
 
 class ForkGui():
-    def __init__(self, *args):
-        windowless=False
-        if isinstance(args[-1], bool):
-            windowless = args[-1]
-            args = args[0:-1]
-        self.args = args
-        self.run(windowless)
-
-    def run(self, windowless):
-        startupinfo = None
-        if os.name == 'nt' and windowless:
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-        proc = subprocess.Popen(self.args, stdin=subprocess.PIPE,
+    def __init__(self, cmd, cwd):
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            startupinfo=startupinfo)
+            cwd=cwd)
 
 
 class Tortoise():
@@ -406,35 +291,49 @@ class Tortoise():
 
     def explore(self, path=None):
         if path == None:
-            ForkGui('explorer.exe', self.root_dir)
+            ForkGui('explorer.exe "' + self.root_dir + '"', None)
         else:
-            ForkGui('explorer.exe', os.path.dirname(path))
+            ForkGui('explorer.exe "' + os.path.dirname(path) + '"', None)
 
 
 class TortoiseProc(Tortoise):
     def status(self, path=None):
         path = self.root_dir if path == None else path
-        ForkGui(self.path, '/command:repostatus', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:repostatus /path:"%s"' % path,
+            self.root_dir)
 
     def commit(self, path=None):
         path = self.root_dir if path == None else path
-        ForkGui(self.path, '/command:commit', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:commit /path:"%s"' % path,
+            self.root_dir)
 
     def log(self, path=None):
         path = self.root_dir if path == None else path
-        ForkGui(self.path, '/command:log', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:log /path:"%s"' % path,
+            self.root_dir)
 
     def diff(self, path):
-        ForkGui(self.path, '/command:diff', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:diff /path:"%s"' % path,
+            self.root_dir)
 
     def add(self, path):
-        ForkGui(self.path, '/command:add', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:add /path:"%s"' % path,
+            self.root_dir)
 
     def remove(self, path):
-        ForkGui(self.path, '/command:remove', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:remove /path:"%s"' % path,
+            self.root_dir)
 
     def revert(self, path):
-        ForkGui(self.path, '/command:revert', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:revert /path:"%s"' % path,
+            self.root_dir)
 
 
 class TortoiseSVN(TortoiseProc):
@@ -448,12 +347,15 @@ class TortoiseSVN(TortoiseProc):
 
     def sync(self, path=None):
         path = self.root_dir if path == None else path
-        ForkGui(self.path, '/command:update', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:update /path:"%s"' % path,
+            self.root_dir)
 
     def get_status(self, path):
         global file_status_cache
+        settings = sublime.load_settings('Tortoise.sublime-settings')
         if path in file_status_cache and file_status_cache[path]['time'] > \
-                get_timestamp() - 10:
+                get_timestamp() - settings.get('cache_length'):
             return file_status_cache[path]['status']
 
         svn = SVN()
@@ -474,12 +376,15 @@ class TortoiseGit(TortoiseProc):
 
     def sync(self, path=None):
         path = self.root_dir if path == None else path
-        ForkGui(self.path, '/command:sync', '/path:%s' % path)
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:sync /path:"%s"' % path,
+            self.root_dir)
 
     def get_status(self, path):
         global file_status_cache
+        settings = sublime.load_settings('Tortoise.sublime-settings')
         if path in file_status_cache and file_status_cache[path]['time'] > \
-                get_timestamp() - 10:
+                get_timestamp() - settings.get('cache_length'):
             return file_status_cache[path]['status']
 
         git = Git(self.path, self.root_dir)
@@ -510,6 +415,7 @@ class TortoiseHg(Tortoise):
         if path == None:
             ForkGui(self.path, 'status', '-R', self.root_dir, True)
         else:
+            path = os.path.relpath(path, self.root_dir)
             ForkGui(self.path, 'status', '-R', self.root_dir, path + '/*',
                 True)
 
@@ -517,36 +423,44 @@ class TortoiseHg(Tortoise):
         if path == None:
             ForkGui(self.path, 'commit', '-R', self.root_dir, True)
         else:
+            path = os.path.relpath(path, self.root_dir)
             ForkGui(self.path, 'commit', '-R', self.root_dir, path, True)
 
     def sync(self, path=None):
         if path == None:
             ForkGui(self.path, 'synch', '-R', self.root_dir, True)
         else:
+            path = os.path.relpath(path, self.root_dir)
             ForkGui(self.path, 'synch', '-R', self.root_dir, path, True)
 
     def log(self, path=None):
         if path == None:
             ForkGui(self.path, 'log', '-R', self.root_dir, True)
         else:
+            path = os.path.relpath(path, self.root_dir)
             ForkGui(self.path, 'log', '-R', self.root_dir, path, True)
 
     def diff(self, path):
+        path = os.path.relpath(path, self.root_dir)
         ForkGui(self.path, 'vdiff', '-R', self.root_dir, path, True)
 
     def add(self, path):
+        path = os.path.relpath(path, self.root_dir)
         ForkGui(self.path, 'add', '-R', self.root_dir, path, True)
 
     def remove(self, path):
+        path = os.path.relpath(path, self.root_dir)
         ForkGui(self.path, 'remove', '-R', self.root_dir, path, True)
 
     def revert(self, path):
+        path = os.path.relpath(path, self.root_dir)
         ForkGui(self.path, 'revert', '-R', self.root_dir, path, True)
 
     def get_status(self, path):
         global file_status_cache
+        settings = sublime.load_settings('Tortoise.sublime-settings')
         if path in file_status_cache and file_status_cache[path]['time'] > \
-                get_timestamp() - 10:
+                get_timestamp() - settings.get('cache_length'):
             return file_status_cache[path]['status']
 
         hg = Hg(self.path)
@@ -627,7 +541,12 @@ class Git():
             path_regex = re.escape(path_without_root) + '$'
             if self.root_dir != path and re.search(path_regex, line) == None:
                 continue
-            return line[1].upper()
+            
+            if line[0] != ' ':
+                res = line[0]
+            else:
+                res = line[1]
+            return res.upper()
         return ''
 
 
@@ -638,13 +557,13 @@ class Hg():
     def check_status(self, path):
         if os.path.isdir(path):
             proc = NonInteractiveProcess([self.hg_path, 'log', '-l', '1',
-                path])
+                '"' + path + '"'])
             result = proc.run().strip().split('\n')
             if result == ['']:
                 return '?'
             return ''
 
-        proc = NonInteractiveProcess([self.hg_path, 'status', path])
+        proc = NonInteractiveProcess([self.hg_path, 'status', '"' + path + '"'])
         result = proc.run().split('\n')
         for line in result:
             if len(line) < 1:
