@@ -240,6 +240,7 @@ class TortoiseRevertCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
 class ForkGui():
     def __init__(self, cmd, cwd):
+
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             cwd=cwd)
@@ -356,11 +357,12 @@ class TortoiseSVN(TortoiseProc):
         settings = sublime.load_settings('Tortoise.sublime-settings')
         if path in file_status_cache and file_status_cache[path]['time'] > \
                 get_timestamp() - settings.get('cache_length'):
-            return file_status_cache[path]['status']
+            if file_status_cache[path].has_key('status'):
+                return file_status_cache[path]['status']
 
         svn = SVN()
         file_status_cache[path] = {"time": get_timestamp()}
-        status = svn.check_status(path)
+        status = svn.check_status(path, self.root_dir)
         file_status_cache[path]['status'] = status
         return status
 
@@ -404,57 +406,88 @@ class TortoiseHg(Tortoise):
             self.path = binary_path
         else:
             try:
-                self.set_binary_path('TortoiseHg\\hgtk.exe',
-                    'hgtk.exe', 'hg_hgtk_path')
-            except (NotFoundError):
                 self.set_binary_path('TortoiseHg\\thg.exe',
+                    'thg.exe', 'hg_hgtk_path')
+            except (NotFoundError):
+                self.set_binary_path('TortoiseHg\\hgtk.exe',
                     'thg.exe (for TortoiseHg v2.x) or hgtk.exe (for ' +
                     'TortoiseHg v1.x)', 'hg_hgtk_path')
 
     def status(self, path=None):
         if path == None:
-            ForkGui(self.path, 'status', '-R', self.root_dir, True)
+            ForkGui([self.path, 'status'], self.root_dir)
         else:
             path = os.path.relpath(path, self.root_dir)
-            ForkGui(self.path, 'status', '-R', self.root_dir, path + '/*',
-                True)
+            args = [self.path, 'status']
+            if path.find(' ') != -1:
+                args.append('--nofork')
+            args.append(path)
+            ForkGui(args, self.root_dir)
 
     def commit(self, path=None):
         if path == None:
-            ForkGui(self.path, 'commit', '-R', self.root_dir, True)
+            ForkGui([self.path, 'commit'], self.root_dir)
         else:
             path = os.path.relpath(path, self.root_dir)
-            ForkGui(self.path, 'commit', '-R', self.root_dir, path, True)
+            args = [self.path, 'commit']
+            if path.find(' ') != -1:
+                args.append('--nofork')
+            args.append(path)
+            ForkGui(args, self.root_dir)
 
     def sync(self, path=None):
         if path == None:
-            ForkGui(self.path, 'synch', '-R', self.root_dir, True)
+            ForkGui([self.path, 'synch'], self.root_dir)
         else:
             path = os.path.relpath(path, self.root_dir)
-            ForkGui(self.path, 'synch', '-R', self.root_dir, path, True)
+            args = [self.path, 'synch']
+            if path.find(' ') != -1:
+                args.append('--nofork')
+            args.append(path)
+            ForkGui(args, self.root_dir)
 
     def log(self, path=None):
         if path == None:
-            ForkGui(self.path, 'log', '-R', self.root_dir, True)
+            ForkGui([self.path, 'log'], self.root_dir)
         else:
             path = os.path.relpath(path, self.root_dir)
-            ForkGui(self.path, 'log', '-R', self.root_dir, path, True)
+            args = [self.path, 'log']
+            if path.find(' ') != -1:
+                args.append('--nofork')
+            args.append(path)
+            ForkGui(args, self.root_dir)
 
     def diff(self, path):
         path = os.path.relpath(path, self.root_dir)
-        ForkGui(self.path, 'vdiff', '-R', self.root_dir, path, True)
+        args = [self.path, 'vdiff']
+        if path.find(' ') != -1:
+            args.append('--nofork')
+        args.append(path)
+        ForkGui(args, self.root_dir)
 
     def add(self, path):
         path = os.path.relpath(path, self.root_dir)
-        ForkGui(self.path, 'add', '-R', self.root_dir, path, True)
+        args = [self.path, 'add']
+        if path.find(' ') != -1:
+            args.append('--nofork')
+        args.append(path)
+        ForkGui(args, self.root_dir)
 
     def remove(self, path):
         path = os.path.relpath(path, self.root_dir)
-        ForkGui(self.path, 'remove', '-R', self.root_dir, path, True)
+        args = [self.path, 'remove']
+        if path.find(' ') != -1:
+            args.append('--nofork')
+        args.append(path)
+        ForkGui(args, self.root_dir)
 
     def revert(self, path):
         path = os.path.relpath(path, self.root_dir)
-        ForkGui(self.path, 'revert', '-R', self.root_dir, path, True)
+        args = [self.path, 'revert']
+        if path.find(' ') != -1:
+            args.append('--nofork')
+        args.append(path)
+        ForkGui(args, self.root_dir)
 
     def get_status(self, path):
         global file_status_cache
@@ -494,23 +527,17 @@ class NonInteractiveProcess():
 
 
 class SVN():
-    def check_status(self, path):
-        slash = '\\'
-
-        # Find the path the plugin in installed in
-        cur_dir = None
-        dirname = sublime.packages_path()
-        for f in os.listdir(dirname):
-            entry = os.path.join(dirname, f)
-            if os.path.isdir(entry):
-                if os.path.exists(os.path.join(entry, 'Tortoise.py')):
-                    cur_dir = entry
-
-        svn_path = cur_dir + slash + 'svn' + slash + 'svn.exe'
+    def check_status(self, path, root_dir):
+        svn_path = os.path.join(sublime.packages_path(), __name__, 'svn', 'svn.exe')
         proc = NonInteractiveProcess([svn_path, 'status', path])
         result = proc.run().split('\n')
         for line in result:
             if len(line) < 1:
+                continue
+            
+            path_without_root = path.replace(root_dir + '\\', '', 1)
+            path_regex = re.escape(path_without_root) + '$'
+            if root_dir != path and re.search(path_regex, line) == None:
                 continue
 
             return line[0]
@@ -563,7 +590,7 @@ class Hg():
                 return '?'
             return ''
 
-        proc = NonInteractiveProcess([self.hg_path, 'status', '"' + path + '"'])
+        proc = NonInteractiveProcess([self.hg_path, 'status', path])
         result = proc.run().split('\n')
         for line in result:
             if len(line) < 1:
