@@ -1,0 +1,32 @@
+[
+    {
+        "caption": "Preferences: Tortoise Settings – Default",
+        "command": "open_file",
+        "args": {
+            "file": "${packages}/Tortoise/Tortoise.sublime-settings"
+        }
+    },
+    {
+        "caption": "Preferences: Tortoise Settings – User",
+        "command": "open_file",
+        "args": {
+            "file": "${packages}/User/Tortoise.sublime-settings"
+        }
+    },
+    {
+        "caption": "Preferences: Tortoise Key Bindings – Default",
+        "command": "open_file",
+        "args": {
+            "file": "${packages}/Terminal/Default (Windows).sublime-keymap",
+            "platform": "Windows"
+        }
+    },
+    {
+        "caption": "Preferences: Tortoise Key Bindings – User",
+        "command": "open_file",
+        "args": {
+            "file": "${packages}/User/Default (Windows).sublime-keymap",
+            "platform": "Windows"
+        }
+    }
+]
