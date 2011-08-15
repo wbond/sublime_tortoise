@@ -150,9 +150,10 @@ class TortoiseLogCommand(sublime_plugin.WindowCommand, TortoiseCommand):
         if not self.menus_enabled():
             return False
         path = self.get_path(paths)
+        vcs = self.get_vcs(path)
         if os.path.isdir(path):
             return True
-        return path and self.get_vcs(path).get_status(path) in \
+        return path and vcs.get_status(path) in \
             ['A', '', 'M', 'R', 'C', 'U']
 
     @invisible_when_not_found
@@ -175,9 +176,10 @@ class TortoiseDiffCommand(sublime_plugin.WindowCommand, TortoiseCommand):
         if not self.menus_enabled():
             return False
         path = self.get_path(paths)
+        vcs = self.get_vcs(path)
         if os.path.isdir(path):
             return True
-        return self.get_vcs(path).get_status(path) in \
+        return vcs.get_status(path) in \
             ['A', '', 'M', 'R', 'C', 'U']
 
     @invisible_when_not_found
