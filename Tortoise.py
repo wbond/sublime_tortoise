@@ -367,6 +367,7 @@ class TortoiseProc(Tortoise):
             status = vcs.check_status(path)
         except (Exception) as (exception):
             sublime.error_message(str(exception))
+            return ''
 
         file_status_cache[path] = {
             'time': time.time() + settings.get('cache_length'),
@@ -548,7 +549,7 @@ class SVN():
 
             path_without_root = path.replace(self.root_dir + '\\', '', 1)
             path_regex = re.escape(path_without_root) + '$'
-            if root_dir != path and re.search(path_regex, line) == None:
+            if self.root_dir != path and re.search(path_regex, line) == None:
                 continue
 
             return line[0]
