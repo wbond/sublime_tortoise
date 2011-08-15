@@ -3,8 +3,7 @@ import sublime_plugin
 import os.path
 import subprocess
 import re
-from datetime import datetime
-from time import mktime
+import time
 
 
 class RepositoryNotFoundError(Exception):
@@ -16,11 +15,6 @@ class NotFoundError(Exception):
 
 
 file_status_cache = {}
-
-
-def get_timestamp():
-    t=datetime.now()
-    return int(mktime(t.timetuple())+1e-6*t.microsecond)
 
 
 def intersect(a, b):
@@ -61,6 +55,10 @@ class TortoiseCommand():
 
         return vcs
 
+    def menus_enabled(self):
+        settings = sublime.load_settings('Tortoise.sublime-settings')
+        return settings.get('enable_menus', True)
+
 
 def handles_not_found(fn):
     def handler(self, *args, **kwargs):
@@ -96,9 +94,11 @@ class TortoiseCommitCommand(sublime_plugin.WindowCommand, TortoiseCommand):
     def run(self, paths=None):
         path = self.get_path(paths)
         self.get_vcs(path).commit(path if os.path.isdir(path) else None)
-    
+
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         if not path:
             return False
@@ -111,14 +111,16 @@ class TortoiseStatusCommand(sublime_plugin.WindowCommand, TortoiseCommand):
     def run(self, paths=None):
         path = self.get_path(paths)
         self.get_vcs(path).status(path if os.path.isdir(path) else None)
-    
+
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         if not path:
             return False
         self.get_vcs(path)
-        return os.path.isdir(path)   
+        return os.path.isdir(path)
 
 
 class TortoiseSyncCommand(sublime_plugin.WindowCommand, TortoiseCommand):
@@ -129,6 +131,8 @@ class TortoiseSyncCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         if not path:
             return False
@@ -144,6 +148,8 @@ class TortoiseLogCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         if os.path.isdir(path):
             return True
@@ -167,6 +173,8 @@ class TortoiseDiffCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         if os.path.isdir(path):
             return True
@@ -193,6 +201,8 @@ class TortoiseAddCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         return self.get_vcs(path).get_status(path) in ['D', '?']
 
@@ -205,6 +215,8 @@ class TortoiseRemoveCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         return self.get_vcs(path).get_status(path) in \
             ['A', '', 'M', 'R', 'C', 'U']
@@ -225,6 +237,8 @@ class TortoiseRevertCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
     @invisible_when_not_found
     def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
         path = self.get_path(paths)
         return self.get_vcs(path).get_status(path) in \
             ['A', '', 'M', 'R', 'C', 'U']
@@ -336,6 +350,34 @@ class TortoiseProc(Tortoise):
         ForkGui('"' + self.path + '" /command:revert /path:"%s"' % path,
             self.root_dir)
 
+    def process_status(self, vcs, path):
+        global file_status_cache
+        settings = sublime.load_settings('Tortoise.sublime-settings')
+        if path in file_status_cache and file_status_cache[path]['time'] > \
+                time.time() - settings.get('cache_length'):
+            if settings.get('debug'):
+                print 'Fetching cached status for %s' % path
+            return file_status_cache[path]['status']
+
+        if settings.get('debug'):
+            start_time = time.time()
+
+        try:
+            status = vcs.check_status(path)
+        except (Exception) as (exception):
+            sublime.error_message(str(exception))
+
+        file_status_cache[path] = {
+            'time': time.time() + settings.get('cache_length'),
+            'status': status
+        }
+
+        if settings.get('debug'):
+            print 'Fetching status for %s in %s seconds' % (path,
+                str(time.time() - start_time))
+
+        return status
+
 
 class TortoiseSVN(TortoiseProc):
     def __init__(self, binary_path, file):
@@ -353,18 +395,8 @@ class TortoiseSVN(TortoiseProc):
             self.root_dir)
 
     def get_status(self, path):
-        global file_status_cache
-        settings = sublime.load_settings('Tortoise.sublime-settings')
-        if path in file_status_cache and file_status_cache[path]['time'] > \
-                get_timestamp() - settings.get('cache_length'):
-            if file_status_cache[path].has_key('status'):
-                return file_status_cache[path]['status']
-
-        svn = SVN()
-        file_status_cache[path] = {"time": get_timestamp()}
-        status = svn.check_status(path, self.root_dir)
-        file_status_cache[path]['status'] = status
-        return status
+        svn = SVN(self.root_dir)
+        return self.process_status(svn, path)
 
 
 class TortoiseGit(TortoiseProc):
@@ -383,20 +415,8 @@ class TortoiseGit(TortoiseProc):
             self.root_dir)
 
     def get_status(self, path):
-        global file_status_cache
-        settings = sublime.load_settings('Tortoise.sublime-settings')
-        if path in file_status_cache and file_status_cache[path]['time'] > \
-                get_timestamp() - settings.get('cache_length'):
-            return file_status_cache[path]['status']
-
         git = Git(self.path, self.root_dir)
-        file_status_cache[path] = {"time": get_timestamp()}
-        try:
-            status = git.check_status(path)
-        except (Exception) as (exception):
-            sublime.error_message(str(exception))
-        file_status_cache[path]['status'] = status
-        return status
+        return self.process_status(git, path)
 
 
 class TortoiseHg(Tortoise):
@@ -490,28 +510,14 @@ class TortoiseHg(Tortoise):
         ForkGui(args, self.root_dir)
 
     def get_status(self, path):
-        global file_status_cache
-        settings = sublime.load_settings('Tortoise.sublime-settings')
-        if path in file_status_cache and file_status_cache[path]['time'] > \
-                get_timestamp() - settings.get('cache_length'):
-            return file_status_cache[path]['status']
-
         hg = Hg(self.path)
-        file_status_cache[path] = {"time": get_timestamp()}
-        try:
-            status = hg.check_status(path)
-        except (Exception) as (exception):
-            sublime.error_message(str(exception))
-
-        file_status_cache[path]['status'] = status
-        return status
+        return self.process_status(hg, path)
 
 
 class NonInteractiveProcess():
     def __init__(self, args, cwd=None):
         self.args = args
         self.cwd  = cwd
-
 
     def run(self):
         startupinfo = None
@@ -527,15 +533,19 @@ class NonInteractiveProcess():
 
 
 class SVN():
-    def check_status(self, path, root_dir):
-        svn_path = os.path.join(sublime.packages_path(), __name__, 'svn', 'svn.exe')
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
+
+    def check_status(self, path):
+        svn_path = os.path.join(sublime.packages_path(), __name__, 'svn',
+            'svn.exe')
         proc = NonInteractiveProcess([svn_path, 'status', path])
         result = proc.run().split('\n')
         for line in result:
             if len(line) < 1:
                 continue
-            
-            path_without_root = path.replace(root_dir + '\\', '', 1)
+
+            path_without_root = path.replace(self.root_dir + '\\', '', 1)
             path_regex = re.escape(path_without_root) + '$'
             if root_dir != path and re.search(path_regex, line) == None:
                 continue
@@ -568,7 +578,7 @@ class Git():
             path_regex = re.escape(path_without_root) + '$'
             if self.root_dir != path and re.search(path_regex, line) == None:
                 continue
-            
+
             if line[0] != ' ':
                 res = line[0]
             else:
