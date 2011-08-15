@@ -1,42 +1,16 @@
 = Sublime Tortoise
 
-This Sublime Text 2 (http://www.sublimetext.com/2) plugin provides keyboard shortcuts and menu entries for TortoiseSVN, TortoiseGit and TortoiseHg.
+Keyboard shortcuts and menu entries for using TortoiseSVN, TortoiseGit and
+TortoiseHg from within [[http://www.sublimetext.com/2|Sublime Text 2]].
 
-== Installation
-
-Simply clone the repository into a new "Tortoise" directory in the Sublime Text 2 Packages directory. This can be located via the "Preferences > Browse Packages..." menu entry.
-
-== Usage
-
-Simply edit a file inside of an SVN, Git or Mercurial working copy, and the editor right-click menu will contain commands that can be performed on the current file. In addition, the sidebar right-click menu will contain commands that can be performed on the selected file or folder.
-
-In addition to the menu item, the following key commands will be available when editing a file:
-
-* The following commands are run on the root of the working copy:
-** ctrl+alt+v, ctrl+alt+e - launch explorer to working copy
-** ctrl+alt+v, ctrl+alt+l - working copy log
-** ctrl+alt+v, ctrl+alt+s - working copy status
-** ctrl+alt+v, ctrl+alt+c - working copy commit
-** ctrl+alt+v, ctrl+alt+u - working copy update/sync
-* The following commands are run on the current file:
-** ctrl+alt+v, ctrl+alt+x - launch explorer to file
-** ctrl+alt+v, ctrl+alt+f - diff file
-** ctrl+alt+v, ctrl+alt+a - add file
-** ctrl+alt+v, ctrl+alt+r - remove file
-** ctrl+alt+v, ctrl+alt+t - revert file
-** ctrl+alt+v, ctrl+alt+g - log of file
-
-== Configuration
-
-All of the shortcuts can be edited by going to the "Preferences > Browse Packages..." menu and opening the file "Tortoise\Default (Windows).sublime-keymap".
-
-Each shortcut will automatically open the appropriate Tortoise* program to work with selected working copy. Sublime Tortoise will automatically detect TortoiseSVN, TortoiseGit and TortoiseHg in their default locations. If an error occurs trying to find the appropriate binary, a custom path can be entered for each by going to the "Preferences > Browse Packages..." menu and editing the file "Tortoise\Tortoise.sublime-settings".
+Please see http://wbond.net/sublime_packages/tortoise for install instructions,
+screenshots and documentation.
 
 == License
 
-All of Sublime Tortoise is licensed under the MIT license, except for the
-files located in the svn subfolder, which are licensed according to the
-LICENSE file therein.
+All of Sublime Tortoise is licensed under the MIT license shown below. The
+supporting files contained within the svn folder are licensed according to
+the licenses in the licenses subfolder.
 
   Copyright (c) 2011 Will Bond <will@wbond.net>
 
