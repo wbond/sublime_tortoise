@@ -77,7 +77,6 @@ def invisible_when_not_found(fn):
                 return res
             return True
         except (NotFoundError) as (exception):
-            print 'Exception: ' + str(exception)
             return False
     return handler
 
