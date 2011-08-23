@@ -17,10 +17,6 @@ class NotFoundError(Exception):
 file_status_cache = {}
 
 
-def intersect(a, b):
-    return bool(set(a) & set(b))
-
-
 class TortoiseCommand():
     def get_path(self, paths):
         if paths == True:
@@ -255,24 +251,24 @@ class TortoiseRevertCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
 class ForkGui():
     def __init__(self, cmd, cwd):
-
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             cwd=cwd)
 
 
 class Tortoise():
-    def find_root(self, name, path):
-        slash = '\\' if os.name == 'nt' else '/'
-
+    def find_root(self, name, path, find_first=True):
         root_dir = None
         last_dir = None
         cur_dir  = path if os.path.isdir(path) else os.path.dirname(path)
         while cur_dir != last_dir:
-            if root_dir != None and not os.path.exists(cur_dir + slash + name):
+            if root_dir != None and not os.path.exists(os.path.join(cur_dir,
+                    name)):
                 break
-            if os.path.exists(cur_dir + slash + name):
+            if os.path.exists(os.path.join(cur_dir, name)):
                 root_dir = cur_dir
+                if find_first:
+                    break
             last_dir = cur_dir
             cur_dir  = os.path.dirname(cur_dir)
 
@@ -310,6 +306,34 @@ class Tortoise():
             ForkGui('explorer.exe "' + self.root_dir + '"', None)
         else:
             ForkGui('explorer.exe "' + os.path.dirname(path) + '"', None)
+
+    def process_status(self, vcs, path):
+        global file_status_cache
+        settings = sublime.load_settings('Tortoise.sublime-settings')
+        if path in file_status_cache and file_status_cache[path]['time'] > \
+                time.time() - settings.get('cache_length'):
+            if settings.get('debug'):
+                print 'Fetching cached status for %s' % path
+            return file_status_cache[path]['status']
+
+        if settings.get('debug'):
+            start_time = time.time()
+
+        try:
+            status = vcs.check_status(path)
+        except (Exception) as (exception):
+            sublime.error_message(str(exception))
+
+        file_status_cache[path] = {
+            'time': time.time() + settings.get('cache_length'),
+            'status': status
+        }
+
+        if settings.get('debug'):
+            print 'Fetching status for %s in %s seconds' % (path,
+                str(time.time() - start_time))
+
+        return status
 
 
 class TortoiseProc(Tortoise):
@@ -351,39 +375,10 @@ class TortoiseProc(Tortoise):
         ForkGui('"' + self.path + '" /command:revert /path:"%s"' % path,
             self.root_dir)
 
-    def process_status(self, vcs, path):
-        global file_status_cache
-        settings = sublime.load_settings('Tortoise.sublime-settings')
-        if path in file_status_cache and file_status_cache[path]['time'] > \
-                time.time() - settings.get('cache_length'):
-            if settings.get('debug'):
-                print 'Fetching cached status for %s' % path
-            return file_status_cache[path]['status']
-
-        if settings.get('debug'):
-            start_time = time.time()
-
-        try:
-            status = vcs.check_status(path)
-        except (Exception) as (exception):
-            sublime.error_message(str(exception))
-            return ''
-
-        file_status_cache[path] = {
-            'time': time.time() + settings.get('cache_length'),
-            'status': status
-        }
-
-        if settings.get('debug'):
-            print 'Fetching status for %s in %s seconds' % (path,
-                str(time.time() - start_time))
-
-        return status
-
 
 class TortoiseSVN(TortoiseProc):
     def __init__(self, binary_path, file):
-        self.find_root('.svn', file)
+        self.find_root('.svn', file, False)
         if binary_path != None:
             self.path = binary_path
         else:
@@ -428,91 +423,55 @@ class TortoiseHg(Tortoise):
             self.path = binary_path
         else:
             try:
-                self.set_binary_path('TortoiseHg\\thg.exe',
-                    'thg.exe', 'hg_hgtk_path')
+                self.set_binary_path('TortoiseHg\\thgw.exe',
+                    'thgw.exe', 'hg_hgtk_path')
             except (NotFoundError):
                 self.set_binary_path('TortoiseHg\\hgtk.exe',
-                    'thg.exe (for TortoiseHg v2.x) or hgtk.exe (for ' +
+                    'thgw.exe (for TortoiseHg v2.x) or hgtk.exe (for ' +
                     'TortoiseHg v1.x)', 'hg_hgtk_path')
 
     def status(self, path=None):
-        if path == None:
-            ForkGui([self.path, 'status'], self.root_dir)
-        else:
-            path = os.path.relpath(path, self.root_dir)
-            args = [self.path, 'status']
-            if path.find(' ') != -1:
-                args.append('--nofork')
-            args.append(path)
-            ForkGui(args, self.root_dir)
+        path = os.path.relpath(path, self.root_dir)
+        args = [self.path, 'status', '--nofork', path]
+        ForkGui(args, self.root_dir)
 
     def commit(self, path=None):
-        if path == None:
-            ForkGui([self.path, 'commit'], self.root_dir)
-        else:
-            path = os.path.relpath(path, self.root_dir)
-            args = [self.path, 'commit']
-            if path.find(' ') != -1:
-                args.append('--nofork')
-            args.append(path)
-            ForkGui(args, self.root_dir)
+        path = os.path.relpath(path, self.root_dir)
+        args = [self.path, 'commit', '--nofork', path]
+        ForkGui(args, self.root_dir)
 
     def sync(self, path=None):
-        if path == None:
-            ForkGui([self.path, 'synch'], self.root_dir)
-        else:
-            path = os.path.relpath(path, self.root_dir)
-            args = [self.path, 'synch']
-            if path.find(' ') != -1:
-                args.append('--nofork')
-            args.append(path)
-            ForkGui(args, self.root_dir)
+        path = os.path.relpath(path, self.root_dir)
+        args = [self.path, 'synch', '--nofork', path]
+        ForkGui(args, self.root_dir)
 
     def log(self, path=None):
-        if path == None:
-            ForkGui([self.path, 'log'], self.root_dir)
-        else:
-            path = os.path.relpath(path, self.root_dir)
-            args = [self.path, 'log']
-            if path.find(' ') != -1:
-                args.append('--nofork')
-            args.append(path)
-            ForkGui(args, self.root_dir)
+        path = os.path.relpath(path, self.root_dir)
+        args = [self.path, 'log', '--nofork', path]
+        ForkGui(args, self.root_dir)
 
     def diff(self, path):
         path = os.path.relpath(path, self.root_dir)
-        args = [self.path, 'vdiff']
-        if path.find(' ') != -1:
-            args.append('--nofork')
-        args.append(path)
+        args = [self.path, 'vdiff', '--nofork', path]
         ForkGui(args, self.root_dir)
 
     def add(self, path):
         path = os.path.relpath(path, self.root_dir)
-        args = [self.path, 'add']
-        if path.find(' ') != -1:
-            args.append('--nofork')
-        args.append(path)
+        args = [self.path, 'add', '--nofork', path]
         ForkGui(args, self.root_dir)
 
     def remove(self, path):
         path = os.path.relpath(path, self.root_dir)
-        args = [self.path, 'remove']
-        if path.find(' ') != -1:
-            args.append('--nofork')
-        args.append(path)
+        args = [self.path, 'remove', '--nofork', path]
         ForkGui(args, self.root_dir)
 
     def revert(self, path):
         path = os.path.relpath(path, self.root_dir)
-        args = [self.path, 'revert']
-        if path.find(' ') != -1:
-            args.append('--nofork')
-        args.append(path)
+        args = [self.path, 'revert', '--nofork', path]
         ForkGui(args, self.root_dir)
 
     def get_status(self, path):
-        hg = Hg(self.path)
+        hg = Hg(self.path, self.root_dir)
         return self.process_status(hg, path)
 
 
@@ -541,7 +500,8 @@ class SVN():
     def check_status(self, path):
         svn_path = os.path.join(sublime.packages_path(), __name__, 'svn',
             'svn.exe')
-        proc = NonInteractiveProcess([svn_path, 'status', path])
+        proc = NonInteractiveProcess([svn_path, 'status', path],
+            cwd=self.root_dir)
         result = proc.run().split('\n')
         for line in result:
             if len(line) < 1:
@@ -590,19 +550,21 @@ class Git():
 
 
 class Hg():
-    def __init__(self, tortoise_proc_path):
+    def __init__(self, tortoise_proc_path, root_dir):
         self.hg_path = os.path.dirname(tortoise_proc_path) + '\\hg.exe'
+        self.root_dir = root_dir
 
     def check_status(self, path):
         if os.path.isdir(path):
             proc = NonInteractiveProcess([self.hg_path, 'log', '-l', '1',
-                '"' + path + '"'])
+                '"' + path + '"'], cwd=self.root_dir)
             result = proc.run().strip().split('\n')
             if result == ['']:
                 return '?'
             return ''
 
-        proc = NonInteractiveProcess([self.hg_path, 'status', path])
+        proc = NonInteractiveProcess([self.hg_path, 'status', path],
+            cwd=self.root_dir)
         result = proc.run().split('\n')
         for line in result:
             if len(line) < 1:
