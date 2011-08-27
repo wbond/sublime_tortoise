@@ -6,6 +6,7 @@
 	{ "keys": ["ctrl+alt+v","ctrl+alt+l"], "command": "tortoise_log" },
 	{ "keys": ["ctrl+alt+v","ctrl+alt+f"], "command": "tortoise_diff", "args": {"paths": true} },
 	{ "keys": ["ctrl+alt+v","ctrl+alt+g"], "command": "tortoise_log", "args": {"paths": true} },
+	{ "keys": ["ctrl+alt+v","ctrl+alt+m"], "command": "tortoise_blame", "args": {"paths": true} },
 	{ "keys": ["ctrl+alt+v","ctrl+alt+x"], "command": "tortoise_explore", "args": {"paths": true} },
 	{ "keys": ["ctrl+alt+v","ctrl+alt+a"], "command": "tortoise_add", "args": {"paths": true} },
 	{ "keys": ["ctrl+alt+v","ctrl+alt+r"], "command": "tortoise_remove", "args": {"paths": true} },

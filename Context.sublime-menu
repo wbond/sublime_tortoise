@@ -1,6 +1,7 @@
 [
     { "caption": "-" },
     { "command": "tortoise_log", "args": {"paths": true}, "caption": "Tortoise Log…" },
+    { "command": "tortoise_blame", "args": {"paths": true}, "caption": "Tortoise Blame…" },
     { "command": "tortoise_diff", "args": {"paths": true}, "caption": "Tortoise Diff…" },
     { "command": "tortoise_add", "args": {"paths": true}, "caption": "Tortoise Add…" },
     { "command": "tortoise_revert", "args": {"paths": true}, "caption": "Tortoise Revert…" },

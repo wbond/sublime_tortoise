@@ -2,6 +2,7 @@
 	{ "caption": "-" },
 	{ "caption": "Tortoise Status…", "command": "tortoise_status", "args": {"paths": []} },
 	{ "caption": "Tortoise Log…", "command": "tortoise_log", "args": {"paths": []} },
+	{ "caption": "Tortoise Blame…", "command": "tortoise_blame", "args": {"paths": []} },
 	{ "caption": "Tortoise Sync…", "command": "tortoise_sync", "args": {"paths": []} },
 	{ "caption": "Tortoise Commit…", "command": "tortoise_commit", "args": {"paths": []} },
 	{ "caption": "Tortoise Diff…", "command": "tortoise_diff", "args": {"paths": []} },

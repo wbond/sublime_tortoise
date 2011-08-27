@@ -32,17 +32,17 @@ class TortoiseCommand():
 
         try:
             vcs = TortoiseSVN(settings.get('svn_tortoiseproc_path'), path)
-        except (RepositoryNotFoundError) as (exception):
+        except (RepositoryNotFoundError):
             pass
 
         try:
             vcs = TortoiseGit(settings.get('git_tortoiseproc_path'), path)
-        except (RepositoryNotFoundError) as (exception):
+        except (RepositoryNotFoundError):
             pass
 
         try:
             vcs = TortoiseHg(settings.get('hg_hgtk_path'), path)
-        except (RepositoryNotFoundError) as (exception):
+        except (RepositoryNotFoundError):
             pass
 
         if vcs == None:
@@ -72,7 +72,7 @@ def invisible_when_not_found(fn):
             if res != None:
                 return res
             return True
-        except (NotFoundError) as (exception):
+        except (NotFoundError):
             return False
     return handler
 
@@ -160,6 +160,30 @@ class TortoiseLogCommand(sublime_plugin.WindowCommand, TortoiseCommand):
         return path and self.get_vcs(path).get_status(path) in \
             ['', 'M', 'R', 'C', 'U']
 
+class TortoiseBlameCommand(sublime_plugin.WindowCommand, TortoiseCommand):
+    @handles_not_found
+    def run(self, paths=None):
+        path = self.get_path(paths)
+        self.get_vcs(path).blame(path if paths else None)
+
+    @invisible_when_not_found
+    def is_visible(self, paths=None):
+        if not self.menus_enabled():
+            return False
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return False
+        vcs = self.get_vcs(path)
+        return path and vcs.get_status(path) in \
+            ['A', '', 'M', 'R', 'C', 'U']
+
+    @invisible_when_not_found
+    def is_enabled(self, paths=None):
+        path = self.get_path(paths)
+        if os.path.isdir(path):
+            return False
+        return path and self.get_vcs(path).get_status(path) in \
+            ['A', '', 'M', 'R', 'C', 'U']
 
 class TortoiseDiffCommand(sublime_plugin.WindowCommand, TortoiseCommand):
     @handles_not_found
@@ -251,7 +275,7 @@ class TortoiseRevertCommand(sublime_plugin.WindowCommand, TortoiseCommand):
 
 class ForkGui():
     def __init__(self, cmd, cwd):
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+        subprocess.Popen(cmd, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             cwd=cwd)
 
@@ -355,6 +379,12 @@ class TortoiseProc(Tortoise):
         ForkGui('"' + self.path + '" /command:log /path:"%s"' % path,
             self.root_dir)
 
+    def blame(self, path=None):
+        path = self.root_dir if path == None else path
+        path = os.path.relpath(path, self.root_dir)
+        ForkGui('"' + self.path + '" /command:blame /path:"%s"' % path,
+            self.root_dir)
+
     def diff(self, path):
         path = os.path.relpath(path, self.root_dir)
         ForkGui('"' + self.path + '" /command:diff /path:"%s"' % path,
@@ -448,6 +478,11 @@ class TortoiseHg(Tortoise):
     def log(self, path=None):
         path = os.path.relpath(path, self.root_dir)
         args = [self.path, 'log', '--nofork', path]
+        ForkGui(args, self.root_dir)
+
+    def blame(self, path=None):
+        path = os.path.relpath(path, self.root_dir)
+        args = [self.path, 'blame', '--nofork', path]
         ForkGui(args, self.root_dir)
 
     def diff(self, path):
